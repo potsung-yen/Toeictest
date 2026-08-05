@@ -1,22 +1,23 @@
 // ==========================================
-// 🚀 單字庫安全接收引擎 (最新架構，保證不當機)
+// 🚀 單字庫安全接收引擎 (自我修復版)
 // ==========================================
 let wordList = [];
 let uniqueDict = {};
 
-// 檢查全域變數 window.SpellingHeroWords 是否有正確載入
-if (window.SpellingHeroWords && Array.isArray(window.SpellingHeroWords)) {
-    window.SpellingHeroWords.forEach(word => {
-        if (word && word.english) {
-            let key = word.english.toLowerCase().trim();
-            uniqueDict[key] = word; 
-        }
-    });
-    // 將字典轉換回陣列
-    wordList = Object.values(uniqueDict);
+function loadDatabase() {
+    if (typeof window.SpellingHeroWords !== 'undefined' && Array.isArray(window.SpellingHeroWords)) {
+        window.SpellingHeroWords.forEach(word => {
+            if (word && word.english) {
+                let key = word.english.toLowerCase().trim();
+                uniqueDict[key] = word; 
+            }
+        });
+        wordList = Object.values(uniqueDict);
+    }
 }
 
-// ==========================================
+// 頁面載入時先試著抓一次
+loadDatabase();
 
 let currentPlayer = "";
 let currentWord = {};
@@ -42,11 +43,15 @@ function openYouTube(customWord) {
 // 🔍 字典查詢系統
 // ==========================================
 function searchWord() {
+    if (wordList.length === 0) {
+        loadDatabase(); // 找不到單字，再試著抓一次
+    }
+
     const query = document.getElementById("searchInput").value.trim().toLowerCase();
     const resultArea = document.getElementById("searchResultArea");
     
     if (wordList.length === 0) {
-        alert("⚠️ 系統沒有讀取到單字庫！\n請檢查網路連線，或確認 GitHub 已經更新完成。");
+        alert("⚠️ 系統還是抓不到單字庫！\n請確定 GitHub Actions 已經出現綠色勾勾，並且稍微等 1 分鐘後再試。");
         return;
     }
 
@@ -97,7 +102,11 @@ function handleSearchEnter(event) {
 
 function startGame() {
     if (wordList.length === 0) {
-        alert("⚠️ 錯誤：系統抓不到任何單字！\n\n如果這是您剛上傳完新檔案，請稍等 GitHub 更新 2~3 分鐘後重新整理網頁！");
+        loadDatabase(); // 找不到單字，再試著抓一次
+    }
+
+    if (wordList.length === 0) {
+        alert("⚠️ 錯誤：系統還是抓不到單字！\n如果你已經存檔很久了，這代表你的 words.js 檔案有語法錯誤 (例如漏掉逗號)。\n請再檢查一次 words.js。");
         return; 
     }
 
