@@ -1,267 +1,251 @@
-// 1. 全域初始化
-window.wordList = typeof SpellingHeroData !== 'undefined' ? SpellingHeroData : [];
-window.currentPlayer = "冒險王";
-window.currentWord = {};
-window.isBossMode = false;
-window.bossWordList = [];
+// 直接讀取全域陣列
+let wordList = SpellingHeroData;
+let currentPlayer = "";
+let currentWord = {};
+let isBossMode = false;
+let bossWordList = [];
 
-// 2. 測試用的強制限時彈窗（只要按鈕按下去，一定會先跳出這行，證明按鈕有通！）
-function testClick() {
-    alert("🟢 按鈕正常運作！單字總數：" + window.wordList.length);
-}
-
-// 3. 點擊 YouTube 發音
-window.openYouTube = function(customWord) {
-    let targetWord = customWord || (window.currentWord && window.currentWord.english);
+// 點擊 YouTube 發音
+function openYouTube(customWord) {
+    let targetWord = customWord || (currentWord && currentWord.english);
     if (!targetWord) return;
     let url = `https://www.youtube.com/results?search_query=how+to+pronounce+${encodeURIComponent(targetWord)}`;
     window.open(url, '_blank');
-};
+}
 
-// 4. 開始遊戲（直接綁定到全域 window）
-window.startGame = function() {
-    if (!window.wordList || window.wordList.length === 0) {
-        alert("❌ 錯誤：words.js 裡的 SpellingHeroData 讀不到！");
+// 字典查詢
+function searchWord() {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    const resultArea = document.getElementById("searchResultArea");
+    
+    if (!query) {
+        resultArea.style.display = "none";
         return;
     }
 
-    let nameInput = document.getElementById("playerName");
-    window.currentPlayer = nameInput && nameInput.value.trim() ? nameInput.value.trim() : "冒險王";
-    
-    let gameArea = document.getElementById("gameArea");
-    let uploadArea = document.getElementById("uploadArea");
-    let endIdx = document.getElementById("endIdx");
+    const matches = wordList.filter(w => 
+        w.english.toLowerCase().includes(query) || 
+        (w.chinese && w.chinese.includes(query))
+    );
 
-    if (gameArea) gameArea.style.display = "block";
-    if (uploadArea) uploadArea.style.display = "block"; 
-    if (endIdx) endIdx.value = window.wordList.length;
-
-    if (typeof updateScoreBoard === 'function') updateScoreBoard();
-    if (typeof checkBossAvailable === 'function') checkBossAvailable();
-    if (typeof nextQuestion === 'function') nextQuestion();
-};
-
-window.changeMode = function() {
-    let gameArea = document.getElementById("gameArea");
-    if (gameArea && gameArea.style.display === "block") {
-        if (typeof nextQuestion === 'function') nextQuestion();
+    if (matches.length === 0) {
+        resultArea.innerHTML = `<p style="color: #d63031; font-weight: bold;">找不到與「${query}」相關的單字 😢</p>`;
+        resultArea.style.display = "block";
+        return;
     }
-};
 
-window.getCombinedWordList = function() {
-    let startInput = document.getElementById("startIdx");
-    let endInput = document.getElementById("endIdx");
-    let start = startInput ? parseInt(startInput.value) || 1 : 1;
-    let end = endInput ? parseInt(endInput.value) || window.wordList.length : window.wordList.length;
+    let html = `<h4 style="color: #2c3e50; margin-top: 0;">🔎 找到 ${matches.length} 個結果：</h4>`;
+    matches.forEach(w => {
+        html += `
+        <div class="search-result-box">
+            <h3 style="margin: 0 0 8px 0; color: #8e44ad;">
+                ${w.english} <span style="font-size: 16px; color: #333;">${w.chinese}</span>
+            </h3>
+            <p style="color: #555;"><em>${w.sentence || "無例句"}</em></p>
+        </div>`;
+    });
     
+    resultArea.innerHTML = html;
+    resultArea.style.display = "block";
+}
+
+function handleSearchEnter(event) {
+    if (event.key === "Enter") searchWord();
+}
+
+// 開始遊戲
+function startGame() {
+    currentPlayer = document.getElementById("playerName").value.trim() || "冒險王";
+    document.getElementById("gameArea").style.display = "block";
+    document.getElementById("uploadArea").style.display = "block"; 
+    document.getElementById("endIdx").value = wordList.length;
+
+    updateScoreBoard();
+    checkBossAvailable();
+    nextQuestion();
+}
+
+function changeMode() {
+    if (document.getElementById("gameArea").style.display === "block") {
+        nextQuestion();
+    }
+}
+
+function getCombinedWordList() {
+    let start = parseInt(document.getElementById("startIdx").value) || 1;
+    let end = parseInt(document.getElementById("endIdx").value) || wordList.length;
     if (start < 1) start = 1;
-    if (end > window.wordList.length) end = window.wordList.length;
+    if (end > wordList.length) end = wordList.length;
     if (start > end) start = end;
 
-    return window.wordList.slice(start - 1, end);
-};
+    return wordList.slice(start - 1, end);
+}
 
-window.nextQuestion = function() {
-    let spellingArea = document.getElementById("spellingArea");
-    let choiceArea = document.getElementById("choiceArea");
-    let submitBtn = document.getElementById("submitBtn");
-    let englishInput = document.getElementById("englishInput");
-    let nextBtn = document.getElementById("nextBtn");
-    let feedbackMsg = document.getElementById("feedbackMsg");
-    let chineseHint = document.getElementById("chineseHint");
-    let sentenceHint = document.getElementById("sentenceHint");
-
-    if (nextBtn) nextBtn.style.display = "none";
-    if (feedbackMsg) feedbackMsg.innerText = "";
+function nextQuestion() {
+    const mode = document.querySelector('input[name="gameMode"]:checked').value;
+    document.getElementById("nextBtn").style.display = "none";
+    document.getElementById("feedbackMsg").innerText = "";
     
-    let modeRadios = document.querySelectorAll('input[name="gameMode"]');
-    let mode = "spelling";
-    modeRadios.forEach(r => { if (r.checked) mode = r.value; });
-
     if (mode === "spelling") {
-        if (spellingArea) spellingArea.style.display = "block";
-        if (choiceArea) choiceArea.style.display = "none";
-        if (submitBtn) submitBtn.style.display = "inline-block";
-        if (englishInput) {
-            englishInput.disabled = false;
-            englishInput.value = "";
-            englishInput.focus();
-        }
+        document.getElementById("spellingArea").style.display = "block";
+        document.getElementById("choiceArea").style.display = "none";
+        document.getElementById("submitBtn").style.display = "inline-block";
+        document.getElementById("englishInput").disabled = false;
+        document.getElementById("englishInput").value = "";
+        document.getElementById("englishInput").focus();
     } else {
-        if (spellingArea) spellingArea.style.display = "none";
-        if (choiceArea) choiceArea.style.display = "flex";
+        document.getElementById("spellingArea").style.display = "none";
+        document.getElementById("choiceArea").style.display = "flex";
     }
 
-    const combinedList = window.getCombinedWordList();
-    if (combinedList.length === 0) return;
-    
-    window.currentWord = combinedList[Math.floor(Math.random() * combinedList.length)];
-
-    if (chineseHint) chineseHint.innerHTML = window.currentWord.chinese;
-    
-    if (sentenceHint) {
-        if (window.currentWord.sentence) {
-            let cleanTarget = window.currentWord.english.replace(/^(a |an |the |to )/i, '').replace(/\([^)]*\)/g, '').trim();
-            let regex = new RegExp(cleanTarget, 'gi');
-            sentenceHint.innerText = window.currentWord.sentence.replace(regex, "________");
-            sentenceHint.style.display = "block";
-        } else {
-            sentenceHint.style.display = "none";
+    if (isBossMode) {
+        if (bossWordList.length === 0) {
+            alert("🎉 魔王被擊敗了！");
+            isBossMode = false;
+            checkBossAvailable();
+            nextQuestion();
+            return;
         }
+        currentWord = bossWordList[Math.floor(Math.random() * bossWordList.length)];
+    } else {
+        const combinedList = getCombinedWordList();
+        currentWord = combinedList[Math.floor(Math.random() * combinedList.length)];
     }
 
-    if (mode === "choice" && typeof renderChoiceOptions === 'function') renderChoiceOptions();
-    if (typeof speakWord === 'function') speakWord();
-};
+    document.getElementById("chineseHint").innerHTML = `${currentWord.chinese}`;
+    
+    const sentenceHint = document.getElementById("sentenceHint");
+    if (currentWord.sentence) {
+        const cleanTarget = currentWord.english.replace(/^(a |an |the |to )/i, '').replace(/\([^)]*\)/g, '').trim();
+        const regex = new RegExp(cleanTarget, 'gi');
+        sentenceHint.innerText = currentWord.sentence.replace(regex, "________");
+        sentenceHint.style.display = "block";
+    } else {
+        sentenceHint.style.display = "none";
+    }
 
-window.renderChoiceOptions = function() {
-    let choiceArea = document.getElementById("choiceArea");
-    if (!choiceArea) return;
+    if (mode === "choice") renderChoiceOptions();
+    speakWord(); 
+}
+
+function renderChoiceOptions() {
+    const choiceArea = document.getElementById("choiceArea");
     choiceArea.innerHTML = "";
 
-    let wrongOptions = window.wordList.filter(w => w.english.toLowerCase() !== window.currentWord.english.toLowerCase());
+    let wrongOptions = wordList.filter(w => w.english.toLowerCase() !== currentWord.english.toLowerCase());
     wrongOptions.sort(() => Math.random() - 0.5);
-    let options = [window.currentWord, ...wrongOptions.slice(0, 3)];
+    let options = [currentWord, ...wrongOptions.slice(0, 3)];
     options.sort(() => Math.random() - 0.5);
 
     options.forEach(opt => {
         let btn = document.createElement("button");
         btn.className = "option-btn";
         btn.innerText = opt.english;
-        btn.onclick = () => window.checkChoiceAnswer(btn, opt.english);
+        btn.onclick = () => checkChoiceAnswer(btn, opt.english);
         choiceArea.appendChild(btn);
     });
-};
+}
 
-window.speakWord = function() {
-    if (!window.currentWord || !window.currentWord.english) return;
-    let textToSpeak = window.currentWord.english.replace(/^(a |an |the |to )/i, '').replace(/\([^)]*\)/g, '').trim();
+function speakWord() {
+    if (!currentWord || !currentWord.english) return;
+    let textToSpeak = currentWord.english.replace(/^(a |an |the |to )/i, '').replace(/\([^)]*\)/g, '').trim();
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel(); 
         let utterance = new SpeechSynthesisUtterance(textToSpeak);
         utterance.lang = 'en-US'; 
         window.speechSynthesis.speak(utterance);
     }
-};
+}
 
-window.checkAnswer = function() {
-    let englishInput = document.getElementById("englishInput");
-    if (!englishInput) return;
-    let userInput = englishInput.value.trim().toLowerCase();
+function checkAnswer() {
+    const userInput = document.getElementById("englishInput").value.trim().toLowerCase();
     if (!userInput) return; 
-    window.processResult(userInput, false);
-};
+    processResult(userInput, false);
+}
 
-window.checkChoiceAnswer = function(clickedBtn, selectedWord) {
-    let choiceArea = document.getElementById("choiceArea");
-    if (choiceArea) {
-        choiceArea.querySelectorAll(".option-btn").forEach(b => b.disabled = true);
-    }
-    const isCorrect = (selectedWord.toLowerCase() === window.currentWord.english.toLowerCase());
+function checkChoiceAnswer(clickedBtn, selectedWord) {
+    const choiceArea = document.getElementById("choiceArea");
+    choiceArea.querySelectorAll(".option-btn").forEach(b => b.disabled = true);
+    const isCorrect = (selectedWord.toLowerCase() === currentWord.english.toLowerCase());
 
     if (isCorrect) {
         clickedBtn.classList.add("btn-correct");
     } else {
         clickedBtn.classList.add("btn-wrong");
-        if (choiceArea) {
-            choiceArea.querySelectorAll(".option-btn").forEach(b => {
-                if (b.innerText.toLowerCase() === window.currentWord.english.toLowerCase()) b.classList.add("btn-correct");
-            });
-        }
+        choiceArea.querySelectorAll(".option-btn").forEach(b => {
+            if (b.innerText.toLowerCase() === currentWord.english.toLowerCase()) b.classList.add("btn-correct");
+        });
     }
-    window.processResult(selectedWord, true);
-};
+    processResult(selectedWord, true);
+}
 
-window.processResult = function(userInput, isChoiceMode) {
-    const correctAnswer = window.currentWord.english.toLowerCase();
-    let playerRecord = window.getPlayerRecord();
+function processResult(userInput, isChoiceMode) {
+    const correctAnswer = currentWord.english.toLowerCase();
+    let playerRecord = getPlayerRecord();
     let isCorrect = (userInput.toLowerCase() === correctAnswer);
-    let feedback = document.getElementById("feedbackMsg");
+    const feedback = document.getElementById("feedbackMsg");
 
     if (isCorrect) {
-        if (feedback) {
-            feedback.innerText = "✨ 答對了！";
-            feedback.className = "feedback correct";
-        }
+        feedback.innerText = "✨ 答對了！";
+        feedback.className = "feedback correct";
         playerRecord.score += 10;
         if (playerRecord.mistakes[correctAnswer]) delete playerRecord.mistakes[correctAnswer];
     } else {
-        if (feedback) {
-            feedback.innerText = `❌ 正確單字: ${window.currentWord.english}`;
-            feedback.className = "feedback wrong";
-        }
-        playerRecord.mistakes[correctAnswer] = { ...window.currentWord, count: (playerRecord.mistakes[correctAnswer]?.count || 0) + 1 };
+        feedback.innerText = `❌ 正確單字: ${currentWord.english}`;
+        feedback.className = "feedback wrong";
+        playerRecord.mistakes[correctAnswer] = { ...currentWord, count: (playerRecord.mistakes[correctAnswer]?.count || 0) + 1 };
     }
 
-    let sentenceHint = document.getElementById("sentenceHint");
-    if (sentenceHint && window.currentWord.sentence) sentenceHint.innerText = window.currentWord.sentence;
+    if (currentWord.sentence) document.getElementById("sentenceHint").innerText = currentWord.sentence;
 
-    window.savePlayerRecord(playerRecord);
-    window.updateScoreBoard();
-    window.checkBossAvailable();
-
-    let englishInput = document.getElementById("englishInput");
-    let submitBtn = document.getElementById("submitBtn");
-    let nextBtn = document.getElementById("nextBtn");
-    let autoNext = document.getElementById("autoNext");
+    savePlayerRecord(playerRecord);
+    updateScoreBoard();
+    checkBossAvailable();
 
     if (!isChoiceMode) {
-        if (englishInput) englishInput.disabled = true;
-        if (submitBtn) submitBtn.style.display = "none";
+        document.getElementById("englishInput").disabled = true;
+        document.getElementById("submitBtn").style.display = "none";
     }
 
-    if (autoNext && autoNext.checked) {
-        setTimeout(() => window.nextQuestion(), isCorrect ? 1500 : 3500);
+    if (document.getElementById("autoNext").checked) {
+        setTimeout(() => nextQuestion(), isCorrect ? 1500 : 3500);
     } else {
-        if (nextBtn) nextBtn.style.display = "inline-block";
+        document.getElementById("nextBtn").style.display = "inline-block";
     }
-};
+}
 
-window.handleEnter = function(event) {
-    let nextBtn = document.getElementById("nextBtn");
-    let submitBtn = document.getElementById("submitBtn");
+function handleEnter(event) {
     if (event.key === "Enter") {
-        if (nextBtn && nextBtn.style.display === "inline-block") window.nextQuestion();
-        else if (submitBtn && submitBtn.style.display === "inline-block") window.checkAnswer();
+        if (document.getElementById("nextBtn").style.display === "inline-block") nextQuestion();
+        else if (document.getElementById("submitBtn").style.display === "inline-block") checkAnswer();
     }
-};
+}
 
-window.getPlayerRecord = function() {
-    let data = localStorage.getItem(`SpellingHero_${window.currentPlayer}`);
+function getPlayerRecord() {
+    let data = localStorage.getItem(`SpellingHero_${currentPlayer}`);
     return data ? JSON.parse(data) : { score: 0, mistakes: {} };
-};
+}
+function savePlayerRecord(data) { localStorage.setItem(`SpellingHero_${currentPlayer}`, JSON.stringify(data)); }
+function updateScoreBoard() { document.getElementById("score").innerText = getPlayerRecord().score; }
 
-window.savePlayerRecord = function(data) { 
-    localStorage.setItem(`SpellingHero_${window.currentPlayer}`, JSON.stringify(data)); 
-};
+function checkBossAvailable() {
+    let mistakes = Object.keys(getPlayerRecord().mistakes).length;
+    const bossBtn = document.getElementById("bossBtn");
+    if (mistakes >= 3 && !isBossMode) {
+        bossBtn.style.display = "inline-block";
+        bossBtn.innerText = `👿 挑戰魔王 (${mistakes}題)`;
+    } else { bossBtn.style.display = "none"; }
+}
 
-window.updateScoreBoard = function() { 
-    let scoreElem = document.getElementById("score");
-    if (scoreElem) scoreElem.innerText = window.getPlayerRecord().score; 
-};
-
-window.checkBossAvailable = function() {
-    let mistakes = Object.keys(window.getPlayerRecord().mistakes).length;
-    let bossBtn = document.getElementById("bossBtn");
-    if (bossBtn) {
-        if (mistakes >= 3 && !window.isBossMode) {
-            bossBtn.style.display = "inline-block";
-            bossBtn.innerText = `👿 挑戰魔王 (${mistakes}題)`;
-        } else { 
-            bossBtn.style.display = "none"; 
-        }
-    }
-};
-
-window.startBossBattle = function() {
-    window.isBossMode = true;
-    window.bossWordList = Object.values(window.getPlayerRecord().mistakes);
+function startBossBattle() {
+    isBossMode = true;
+    bossWordList = Object.values(getPlayerRecord().mistakes);
     alert("⚔️ 魔王戰開始！");
-    window.nextQuestion();
-};
+    nextQuestion();
+}
 
-window.exportMistakes = function() {
-    let mistakes = Object.values(window.getPlayerRecord().mistakes);
+function exportMistakes() {
+    let mistakes = Object.values(getPlayerRecord().mistakes);
     if (mistakes.length === 0) { alert("🎉 沒有錯題！"); return; }
     let csv = "\uFEFF英文單字,中文意思,例句\n" + mistakes.map(w => `"${w.english}","${w.chinese}","${w.sentence || ''}"`).join("\n");
     let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -269,59 +253,47 @@ window.exportMistakes = function() {
     link.href = URL.createObjectURL(blob);
     link.download = `錯題本.csv`;
     link.click();
-};
+}
 
-// 5. 確保「選單字」絕對可以被喚醒
-window.openWordSelector = function() {
-    let modal = document.getElementById("wordSelectorModal");
-    let container = document.getElementById("wordListContainer");
-    if (!modal || !container) {
-        alert("⚠️ 找不到選單字視窗元件！");
-        return;
-    }
+// 點我選單字
+function openWordSelector() {
+    const modal = document.getElementById("wordSelectorModal");
+    const container = document.getElementById("wordListContainer");
+    if (!modal || !container) return;
 
     container.innerHTML = ""; 
-    window.wordList.forEach((word, index) => {
+    wordList.forEach((word, index) => {
         let div = document.createElement("div");
         div.className = "word-item";
         div.innerHTML = `<input type="checkbox" class="word-checkbox" value="${index + 1}"> 第 ${index + 1} 題：<b>${word.english}</b> (${word.chinese})`;
         container.appendChild(div);
     });
     modal.style.display = "flex";
-};
+}
 
-window.closeWordSelector = function() { 
-    let modal = document.getElementById("wordSelectorModal");
-    if (modal) modal.style.display = "none"; 
-};
+function closeWordSelector() { 
+    document.getElementById("wordSelectorModal").style.display = "none"; 
+}
 
-window.toggleSelectAll = function(source) { 
+function toggleSelectAll(source) { 
     document.querySelectorAll('.word-checkbox').forEach(cb => cb.checked = source.checked); 
-};
+}
 
-window.confirmWordSelection = function() {
+function confirmWordSelection() {
     let selected = [];
     document.querySelectorAll('.word-checkbox:checked').forEach(cb => selected.push(cb.value));
-    let customIdx = document.getElementById("customIdx");
-    if (customIdx) customIdx.value = selected.join(", ");
-    window.closeWordSelector();
-};
+    document.getElementById("customIdx").value = selected.join(", ");
+    closeWordSelector();
+}
 
-window.openPromptModal = function() { 
-    let modal = document.getElementById("promptModal");
-    if (modal) modal.style.display = "flex"; 
-};
-
-window.closePromptModal = function() { 
-    let modal = document.getElementById("promptModal");
-    if (modal) modal.style.display = "none"; 
-};
-
-window.copyPrompt = function() {
-    let promptText = document.getElementById("aiPromptText");
-    if (promptText) {
-        promptText.select();
-        document.execCommand("copy");
-        alert("✅ 複製成功！");
-    }
-};
+function openPromptModal() { 
+    document.getElementById("promptModal").style.display = "flex"; 
+}
+function closePromptModal() { 
+    document.getElementById("promptModal").style.display = "none"; 
+}
+function copyPrompt() {
+    document.getElementById("aiPromptText").select();
+    document.execCommand("copy");
+    alert("✅ 複製成功！");
+}
