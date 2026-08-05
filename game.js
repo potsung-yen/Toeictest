@@ -7,13 +7,10 @@ let uniqueDict = {};
 if (typeof allWordBatches !== 'undefined') {
     allWordBatches.forEach(batch => {
         batch.forEach(word => {
-            // 將單字轉小寫並去除空白，作為不重複的唯一鍵值 (Key)
             let key = word.english.toLowerCase().trim();
-            // 如果遇到重複的單字，後面上傳的新單字會自動覆蓋舊單字
             uniqueDict[key] = word; 
         });
     });
-    // 將去重後的字典轉回遊戲需要的陣列
     wordList = Object.values(uniqueDict);
 }
 // ==========================================
@@ -23,12 +20,79 @@ let currentWord = {};
 let isBossMode = false;
 let bossWordList = [];
 
+// ==========================================
+// 📺 YouTube 發音連結引擎
+// ==========================================
+function openYouTube(customWord) {
+    // 優先使用傳入的單字，沒有則使用當前遊戲正在考的單字
+    let targetWord = customWord || currentWord.english;
+    
+    // 如果資料庫(words.js)裡有存 youtube 網址就用它，沒有的話系統幫你自動合成！
+    let targetData = wordList.find(w => w.english.toLowerCase() === targetWord.toLowerCase());
+    let url = (targetData && targetData.youtube) 
+        ? targetData.youtube 
+        : `https://www.youtube.com/results?search_query=how+to+pronounce+${encodeURIComponent(targetWord)}`;
+        
+    window.open(url, '_blank');
+}
+
+// ==========================================
+// 🔍 字典查詢系統
+// ==========================================
+function searchWord() {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    const resultArea = document.getElementById("searchResultArea");
+    
+    if (!query) {
+        resultArea.style.display = "none";
+        return;
+    }
+
+    const matches = wordList.filter(w => 
+        w.english.toLowerCase().includes(query) || 
+        (w.chinese && w.chinese.includes(query))
+    );
+
+    if (matches.length === 0) {
+        resultArea.innerHTML = `<p style="color: #d63031; font-weight: bold;">找不到與「${query}」相關的單字 😢</p>`;
+        resultArea.style.display = "block";
+        return;
+    }
+
+    let html = `<h4 style="color: #2c3e50; margin-top: 0;">🔎 找到 ${matches.length} 個結果：</h4>`;
+    
+    matches.forEach(w => {
+        let tag = getDetailedPOS(w.english, w.chinese);
+        html += `
+        <div class="search-result-box">
+            <h3 style="margin: 0 0 8px 0; color: #8e44ad; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                ${w.english} 
+                <span style="font-size: 16px; color: #333;">${tag} ${w.chinese}</span>
+                <button onclick="openYouTube('${w.english}')" style="background-color: #e74c3c; padding: 4px 10px; font-size: 14px; border-radius: 4px;">📺 聽發音</button>
+            </h3>
+            <p style="color: #555;"><em>${w.sentence || "無例句"}</em></p>
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 8px 0;">
+            <p><strong>✅ 同義：</strong> <span style="color:#2c3e50">${w.synonyms || "無資料"}</span></p>
+            <p><strong>❌ 反義：</strong> <span style="color:#2c3e50">${w.antonyms || "無資料"}</span></p>
+            <p><strong>⚠️ 混淆 / 片語：</strong> <span style="color:#e74c3c">${w.confused || "無資料"}</span></p>
+        </div>
+        `;
+    });
+    
+    resultArea.innerHTML = html;
+    resultArea.style.display = "block";
+}
+
+function handleSearchEnter(event) {
+    if (event.key === "Enter") searchWord();
+}
+// ==========================================
+
 function startGame() {
     currentPlayer = document.getElementById("playerName").value.trim() || "冒險王";
     document.getElementById("gameArea").style.display = "block";
     document.getElementById("uploadArea").style.display = "block"; 
     
-    // 初始化題數上限
     document.getElementById("endIdx").value = wordList.length;
 
     updateScoreBoard();
@@ -93,10 +157,10 @@ function getCombinedWordList() {
 }
 
 function getDetailedPOS(eng, chi) {
+    if (!chi) return "📌[n.]";
     let cleanChi = chi.trim();
     let posResult = "";
     
-    // 自動抓取 (adj.), (v.), (n.) 等詞性標記
     const match = cleanChi.match(/\((adj\.|v\.|n\.|adv\.|prep\.|conj\.)\)/i);
     if (match) {
         posResult = match[1];
@@ -421,7 +485,6 @@ function handleFileUpload(event) {
     reader.readAsText(file, "UTF-8");
 }
 
-// ================== 單字解析視窗控制 ==================
 function showWordInfo() {
     document.getElementById('infoTitle').innerText = `【 ${currentWord.english} 】 解析`;
     document.getElementById('infoSynonyms').innerText = currentWord.synonyms || "暫無資料";
@@ -434,7 +497,6 @@ function closeWordInfo() {
     document.getElementById('infoModal').style.display = "none";
 }
 
-// ================== AI 提示詞視窗控制 ==================
 function openPromptModal() {
     document.getElementById("promptModal").style.display = "flex";
 }
@@ -444,12 +506,11 @@ function closePromptModal() {
 function copyPrompt() {
     const textToCopy = document.getElementById("aiPromptText");
     textToCopy.select();
-    textToCopy.setSelectionRange(0, 99999); // 手機版相容
+    textToCopy.setSelectionRange(0, 99999); 
     document.execCommand("copy");
     alert("✅ 提示詞已複製！可以貼給 AI 囉！");
 }
 
-// ================== 單字挑選器 (自動分群版) ==================
 function openWordSelector() {
     const modal = document.getElementById("wordSelectorModal");
     const container = document.getElementById("wordListContainer");
@@ -482,7 +543,6 @@ function openWordSelector() {
         }
     }
 
-    // 將單字依據 (P.x) 自動分群
     let grouped = {};
     fullList.forEach((word, index) => {
         let displayNum = index + 1;
@@ -498,7 +558,6 @@ function openWordSelector() {
         grouped[pageName].push(word);
     });
 
-    // 渲染分群結果到畫面上
     for (let page in grouped) {
         let header = document.createElement("div");
         header.style.backgroundColor = "#dfe6e9";
