@@ -140,7 +140,7 @@
 
         <h3>當前得分：<span id="score" style="color: #e17055;">0</span> 分</h3>
         
-        <!-- 解析與發音按鈕 (新增 YouTube 按鈕) -->
+        <!-- 解析與發音按鈕 -->
         <div style="font-size: 24px; margin: 20px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <span id="chineseHint">中文提示</span>
             <button onclick="speakWord()" style="background-color: #00b894; padding: 6px 14px; font-size: 16px;" title="聽真人發音">🔊 發音</button>
@@ -167,10 +167,10 @@
         </div>
     </div>
 
-    <!-- AI 提示詞彈出視窗 (加入 Youtube 欄位規則) -->
+    <!-- AI 提示詞彈出視窗 -->
     <div id="promptModal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center;">
         <div style="background:white; width:90%; max-width:650px; border-radius:12px; padding:20px; text-align:left; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="color:#27ae60; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">🤖 一鍵擴充 AI 提示詞 (包含 YouTube)</h3>
+            <h3 style="color:#27ae60; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">🤖 一鍵擴充 AI 提示詞</h3>
             <p style="font-size: 14px; color: #555;">請複製以下提示詞並發送給 AI，然後將產生的程式碼直接貼到 <code>words.js</code> 最下方即可。</p>
             <textarea id="aiPromptText" style="width: 100%; height: 350px; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;" readonly>
 請扮演一位專業的英語教師與網頁資料庫建置專家。
@@ -238,7 +238,8 @@ allWordBatches.push([
         </div>
     </div>
 
-    <script src="words.js"></script>
-    <script src="game.js"></script>
+    <!-- 🔥 終極除錯：加上 ?v=2.0 強制 GitHub Pages 抓取最新檔案，破解快取 -->
+    <script src="words.js?v=2.0"></script>
+    <script src="game.js?v=2.0"></script>
 </body>
 </html>
