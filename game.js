@@ -1,30 +1,22 @@
 // ==========================================
-// 🚀 單字庫自動合併與去重引擎 (修復版)
+// 🚀 單字庫安全接收引擎 (最新架構，保證不當機)
 // ==========================================
 let wordList = [];
 let uniqueDict = {};
 
-// 確保 allWordBatches 存在且有內容
-if (typeof allWordBatches !== 'undefined' && Array.isArray(allWordBatches)) {
-    allWordBatches.forEach(batch => {
-        if (Array.isArray(batch)) {
-            batch.forEach(word => {
-                if (word && word.english) {
-                    let key = word.english.toLowerCase().trim();
-                    uniqueDict[key] = word;
-                }
-            });
+// 檢查全域變數 window.SpellingHeroWords 是否有正確載入
+if (window.SpellingHeroWords && Array.isArray(window.SpellingHeroWords)) {
+    window.SpellingHeroWords.forEach(word => {
+        if (word && word.english) {
+            let key = word.english.toLowerCase().trim();
+            uniqueDict[key] = word; 
         }
     });
+    // 將字典轉換回陣列
     wordList = Object.values(uniqueDict);
 }
 
-// 如果這樣還是抓不到，提供一個安全防護避免完全空白
-if (wordList.length === 0 && typeof rawWords !== 'undefined') {
-    wordList = rawWords;
-}
 // ==========================================
- ==========================================
 
 let currentPlayer = "";
 let currentWord = {};
@@ -53,9 +45,8 @@ function searchWord() {
     const query = document.getElementById("searchInput").value.trim().toLowerCase();
     const resultArea = document.getElementById("searchResultArea");
     
-    // 如果單字庫是空的，提出警告
     if (wordList.length === 0) {
-        alert("系統讀取不到單字庫！請稍後再試或重新整理網頁。");
+        alert("⚠️ 系統沒有讀取到單字庫！\n請檢查網路連線，或確認 GitHub 已經更新完成。");
         return;
     }
 
@@ -105,9 +96,8 @@ function handleSearchEnter(event) {
 // ==========================================
 
 function startGame() {
-    // 🔥 防呆與除錯防線：確保單字真的有讀到才讓遊戲開始
     if (wordList.length === 0) {
-        alert("⚠️ 錯誤：系統抓不到任何單字！\n\n這通常是因為：\n1. GitHub Pages 還在跑更新快取 (請等 2~3 分鐘後重新整理)\n2. words.js 檔案有語法錯誤 (例如漏掉逗號或括號)\n\n請不要硬玩，會當機喔！");
+        alert("⚠️ 錯誤：系統抓不到任何單字！\n\n如果這是您剛上傳完新檔案，請稍等 GitHub 更新 2~3 分鐘後重新整理網頁！");
         return; 
     }
 
