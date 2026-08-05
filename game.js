@@ -1,19 +1,30 @@
 // ==========================================
-// 🚀 單字庫自動合併與去重引擎
+// 🚀 單字庫自動合併與去重引擎 (修復版)
 // ==========================================
 let wordList = [];
 let uniqueDict = {};
 
-if (typeof allWordBatches !== 'undefined') {
+// 確保 allWordBatches 存在且有內容
+if (typeof allWordBatches !== 'undefined' && Array.isArray(allWordBatches)) {
     allWordBatches.forEach(batch => {
-        batch.forEach(word => {
-            let key = word.english.toLowerCase().trim();
-            uniqueDict[key] = word; 
-        });
+        if (Array.isArray(batch)) {
+            batch.forEach(word => {
+                if (word && word.english) {
+                    let key = word.english.toLowerCase().trim();
+                    uniqueDict[key] = word;
+                }
+            });
+        }
     });
     wordList = Object.values(uniqueDict);
 }
+
+// 如果這樣還是抓不到，提供一個安全防護避免完全空白
+if (wordList.length === 0 && typeof rawWords !== 'undefined') {
+    wordList = rawWords;
+}
 // ==========================================
+ ==========================================
 
 let currentPlayer = "";
 let currentWord = {};
