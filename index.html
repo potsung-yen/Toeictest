@@ -174,19 +174,18 @@
             <p style="font-size: 14px; color: #555;">請複製以下提示詞並發送給 AI，然後將產生的程式碼直接貼到 <code>words.js</code> 最下方即可。</p>
             <textarea id="aiPromptText" style="width: 100%; height: 350px; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;" readonly>
 請扮演一位專業的英語教師與網頁資料庫建置專家。
-我會提供給你一批新的單字清單。請幫我為每一個單字擴充「符合多益 900 分水準的商務英文例句」，並直接輸出成 JavaScript 的 `push` 陣列格式。
+我會提供給你一批新的單字清單。請幫我為每一個單字擴充「符合多益 900 分水準的商務英文例句」，並直接輸出成 JavaScript 程式碼格式。
 
 【生成規則】
-1. 請輸出為 JSON 物件陣列，並將這個陣列包在 `allWordBatches.push(` 與 `);` 之中。
+1. 請輸出為 JSON 物件陣列，並將這個陣列包在 `window.SpellingHeroWords.push(` 與 `);` 之中。
 2. 必須包含 `english`, `chinese`, `sentence`, `synonyms`, `antonyms`, `confused`, `youtube` 這 7 個欄位。
 3. 為了讓字庫更強大，請在 `synonyms` 與 `antonyms` 欄位中，盡可能提供豐富的詞彙 (盡量 5 到 10 個以上)，並在每個詞後方附上 (中文)。
 4. 在 `confused` 欄位中，請補充「易混淆字」以及「相關的實用片語」，一樣在後方附上 (中文)。
 5. 在 `youtube` 欄位中，請輸出字串："https://www.youtube.com/results?search_query=how+to+pronounce+" 加上該英文單字。
-6. 如果遇到重複的單字沒關係，前端系統會自動覆蓋去重。
-7. 最重要：請只輸出在 Code block 中的純程式碼，不要任何解釋或廢話。
+6. 最重要：請只輸出在 Code block 中的純程式碼，不要任何解釋或廢話。
 
 【預期輸出範例】
-allWordBatches.push([
+window.SpellingHeroWords.push(
   {
     "english": "budget",
     "chinese": "預算 (n.) (P.3)",
@@ -196,7 +195,7 @@ allWordBatches.push([
     "confused": "badge (徽章) / on a budget (預算有限), go over budget (超出預算)",
     "youtube": "https://www.youtube.com/results?search_query=how+to+pronounce+budget"
   }
-]);
+);
 
 【我的單字清單】
 (請將新一批的單字貼在這裡...)
@@ -238,9 +237,8 @@ allWordBatches.push([
         </div>
     </div>
 
-    <!-- 🔥 終極除錯：加上 ?v=2.0 強制 GitHub Pages 抓取最新檔案，破解快取 -->
-    <script src="words.js?v=2.0"></script>
-    <script src="game.js?v=2.0"></script>
+    <!-- 腳本引入區 (強制加上 v 參數避免快取干擾) -->
+    <script src="words.js?v=4.0"></script>
+    <script src="game.js?v=4.0"></script>
 </body>
 </html>
-
