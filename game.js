@@ -1,6 +1,3 @@
-// ==========================================
-// 🚀 單字庫安全接收引擎 (自我修復版)
-// ==========================================
 let wordList = [];
 let uniqueDict = {};
 
@@ -16,7 +13,7 @@ function loadDatabase() {
     }
 }
 
-// 頁面載入時先試著抓一次
+// 頁面載入時試圖抓取單字
 loadDatabase();
 
 let currentPlayer = "";
@@ -24,9 +21,6 @@ let currentWord = {};
 let isBossMode = false;
 let bossWordList = [];
 
-// ==========================================
-// 📺 YouTube 發音連結引擎
-// ==========================================
 function openYouTube(customWord) {
     let targetWord = customWord || (currentWord && currentWord.english);
     if (!targetWord) return;
@@ -39,19 +33,14 @@ function openYouTube(customWord) {
     window.open(url, '_blank');
 }
 
-// ==========================================
-// 🔍 字典查詢系統
-// ==========================================
 function searchWord() {
-    if (wordList.length === 0) {
-        loadDatabase(); // 找不到單字，再試著抓一次
-    }
+    if (wordList.length === 0) loadDatabase(); 
 
     const query = document.getElementById("searchInput").value.trim().toLowerCase();
     const resultArea = document.getElementById("searchResultArea");
     
     if (wordList.length === 0) {
-        alert("⚠️ 系統還是抓不到單字庫！\n請確定 GitHub Actions 已經出現綠色勾勾，並且稍微等 1 分鐘後再試。");
+        alert("⚠️ 系統抓不到單字庫！\n請確定 GitHub 已經更新完成，並重新整理網頁。");
         return;
     }
 
@@ -98,15 +87,12 @@ function searchWord() {
 function handleSearchEnter(event) {
     if (event.key === "Enter") searchWord();
 }
-// ==========================================
 
 function startGame() {
-    if (wordList.length === 0) {
-        loadDatabase(); // 找不到單字，再試著抓一次
-    }
+    if (wordList.length === 0) loadDatabase();
 
     if (wordList.length === 0) {
-        alert("⚠️ 錯誤：系統還是抓不到單字！\n如果你已經存檔很久了，這代表你的 words.js 檔案有語法錯誤 (例如漏掉逗號)。\n請再檢查一次 words.js。");
+        alert("⚠️ 錯誤：系統抓不到任何單字！\n請確認您的 words.js 檔案沒有語法錯誤。");
         return; 
     }
 
