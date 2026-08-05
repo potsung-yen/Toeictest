@@ -322,3 +322,23 @@ function copyPrompt() {
 function bunnyGreet() {
     alert("🐰 兔子小助手：你做得超棒的！繼續加油破關！");
 }
+// 強制綁定所有按鈕，無視手機瀏覽器的點擊攔截
+document.addEventListener("DOMContentLoaded", function() {
+    // 綁定「選單字」按鈕
+    const selectWordBtn = document.querySelector(".btn-secondary");
+    if (selectWordBtn) {
+        selectWordBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            openWordSelector();
+        });
+    }
+
+    // 綁定「開始冒險」按鈕
+    const startBtn = document.querySelector(".btn-primary");
+    if (startBtn) {
+        startBtn.addEventListener("click", function(e) {
+            e.preventDefault();
+            startGame();
+        });
+    }
+});
