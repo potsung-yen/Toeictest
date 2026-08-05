@@ -2,9 +2,10 @@ let wordList = [];
 let uniqueDict = {};
 
 function loadWordDatabase() {
-    if (wordList.length > 0) return; // 已經載入過了就跳過
+    // 每次被呼叫都強制重新整理一次資料庫，絕對不會漏掉單字！
+    wordList = [];
+    uniqueDict = {};
     
-    // 支援新舊兩種格式，確保 100% 抓得到單字
     let rawData = typeof SpellingHeroData !== 'undefined' ? SpellingHeroData : (typeof window.SpellingHeroWords !== 'undefined' ? window.SpellingHeroWords : []);
     
     if (Array.isArray(rawData)) {
@@ -18,8 +19,9 @@ function loadWordDatabase() {
     }
 }
 
-// 頁面一開始就執行載入
+// 頁面一開始立刻執行載入
 loadWordDatabase();
+
 
 let currentPlayer = "";
 let currentWord = {};
