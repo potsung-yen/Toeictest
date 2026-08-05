@@ -1,12 +1,4 @@
-// ===================================================
-// 📦 系統總陣列初始化 (100% 防止當機的全域宣告法)
-// ===================================================
-window.SpellingHeroWords = window.SpellingHeroWords || [];
-
-// ---------------------------------------------------
-// 👇 你的第一批完整 30 個單字 👇
-// ---------------------------------------------------
-window.SpellingHeroWords.push(
+window.SpellingHeroWords = [
   {
     "english": "absurd",
     "chinese": "荒謬的 (adj.) (P.1)",
@@ -277,4 +269,4 @@ window.SpellingHeroWords.push(
     "confused": "airline (航空公司) / commercial airliner (商用客機)",
     "youtube": "https://www.youtube.com/results?search_query=how+to+pronounce+airliner"
   }
-);
+];
