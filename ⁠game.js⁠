@@ -56,7 +56,7 @@ function handleSearchEnter(event) {
 // 開始遊戲
 function startGame() {
     if (!wordList || wordList.length === 0) {
-        alert("⚠️ 錯誤：單字庫尚未載入！");
+        alert("⚠️ 錯誤：單字庫 SpellingHeroData 尚未載入！請檢查 words.js。");
         return; 
     }
 
@@ -260,33 +260,66 @@ function exportMistakes() {
     link.click();
 }
 
+// 🛡️ 加上防呆保護的「選單字」功能
 function openWordSelector() {
-    const modal = document.getElementById("wordSelectorModal");
-    const container = document.getElementById("wordListContainer");
-    container.innerHTML = ""; 
-    
-    wordList.forEach((word, index) => {
-        let div = document.createElement("div");
-        div.className = "word-item";
-        div.innerHTML = `<input type="checkbox" class="word-checkbox" value="${index + 1}"> 第 ${index + 1} 題：<b>${word.english}</b> (${word.chinese})`;
-        container.appendChild(div);
-    });
-    modal.style.display = "flex";
+    try {
+        if (!wordList || wordList.length === 0) {
+            alert("⚠️ 錯誤：單字庫尚未載入，請確認 words.js 是否正常！");
+            return;
+        }
+
+        const modal = document.getElementById("wordSelectorModal");
+        const container = document.getElementById("wordListContainer");
+        if (!modal || !container) {
+            alert("⚠️ 錯誤：找不到網頁上的選單字視窗元件 (modal)！");
+            return;
+        }
+
+        container.innerHTML = ""; 
+        
+        wordList.forEach((word, index) => {
+            let div = document.createElement("div");
+            div.className = "word-item";
+            div.innerHTML = `<input type="checkbox" class="word-checkbox" value="${index + 1}"> 第 ${index + 1} 題：<b>${word.english}</b> (${word.chinese})`;
+            container.appendChild(div);
+        });
+        
+        modal.style.display = "flex";
+    } catch (error) {
+        alert("🚨 發生未預期錯誤：" + error.message);
+    }
 }
 
-function closeWordSelector() { document.getElementById("wordSelectorModal").style.display = "none"; }
-function toggleSelectAll(source) { document.querySelectorAll('.word-checkbox').forEach(cb => cb.checked = source.checked); }
+function closeWordSelector() { 
+    const modal = document.getElementById("wordSelectorModal");
+    if (modal) modal.style.display = "none"; 
+}
+
+function toggleSelectAll(source) { 
+    document.querySelectorAll('.word-checkbox').forEach(cb => cb.checked = source.checked); 
+}
+
 function confirmWordSelection() {
     let selected = [];
     document.querySelectorAll('.word-checkbox:checked').forEach(cb => selected.push(cb.value));
-    document.getElementById("customIdx").value = selected.join(", ");
+    let customIdxInput = document.getElementById("customIdx");
+    if (customIdxInput) customIdxInput.value = selected.join(", ");
     closeWordSelector();
 }
 
-function openPromptModal() { document.getElementById("promptModal").style.display = "flex"; }
-function closePromptModal() { document.getElementById("promptModal").style.display = "none"; }
+function openPromptModal() { 
+    const modal = document.getElementById("promptModal");
+    if (modal) modal.style.display = "flex"; 
+}
+function closePromptModal() { 
+    const modal = document.getElementById("promptModal");
+    if (modal) modal.style.display = "none"; 
+}
 function copyPrompt() {
-    document.getElementById("aiPromptText").select();
-    document.execCommand("copy");
-    alert("✅ 複製成功！");
+    const textElem = document.getElementById("aiPromptText");
+    if (textElem) {
+        textElem.select();
+        document.execCommand("copy");
+        alert("✅ 複製成功！");
+    }
 }
