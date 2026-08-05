@@ -68,11 +68,30 @@
             100% { transform: scale(1); }
         }
         .bunny-talking { animation: bunnyJump 0.3s infinite alternate; }
+
+        /* 搜尋結果樣式 */
+        .search-result-box {
+            background: #f1f2f6;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 5px solid #8e44ad;
+            text-align: left;
+        }
+        .search-result-box p { margin: 5px 0; font-size: 15px; }
     </style>
 </head>
 <body>
 
     <h1>Spelling Hero 英語單字冒險王</h1>
+
+    <!-- 字典查詢區 -->
+    <div class="card" id="searchDictCard">
+        <h3>🔍 專屬字典查詢</h3>
+        <input type="text" id="searchInput" placeholder="輸入英文或中文..." style="width: 60%;" onkeypress="handleSearchEnter(event)">
+        <button onclick="searchWord()" style="background-color: #8e44ad;">查詢</button>
+        <div id="searchResultArea" style="margin-top: 15px; display: none; max-height: 400px; overflow-y: auto; border-top: 1px dashed #ccc; padding-top: 15px;"></div>
+    </div>
 
     <!-- 登入與範圍設定區 -->
     <div class="card">
@@ -97,7 +116,6 @@
             <button onclick="startGame()">開始冒險</button>
             <button id="bossBtn" onclick="startBossBattle()" style="display:none; background-color: #d63031; margin-left: 10px;">挑戰魔王</button>
             <button onclick="exportMistakes()" style="background-color: #e17055; margin-left: 10px;">下載錯題本</button>
-            <!-- 獲取提示詞按鈕 -->
             <button onclick="openPromptModal()" style="background-color: #27ae60; margin-left: 10px;">🤖 獲取 AI 擴充提示詞</button>
         </div>
     </div>
@@ -122,10 +140,11 @@
 
         <h3>當前得分：<span id="score" style="color: #e17055;">0</span> 分</h3>
         
-        <!-- 解析按鈕 -->
+        <!-- 解析與發音按鈕 (新增 YouTube 按鈕) -->
         <div style="font-size: 24px; margin: 20px 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
             <span id="chineseHint">中文提示</span>
             <button onclick="speakWord()" style="background-color: #00b894; padding: 6px 14px; font-size: 16px;" title="聽真人發音">🔊 發音</button>
+            <button onclick="openYouTube()" style="background-color: #e74c3c; padding: 6px 14px; font-size: 16px;" title="在 YouTube 上聽發音">📺 YouTube</button>
             <button onclick="showWordInfo()" style="background-color: #f39c12; padding: 6px 14px; font-size: 16px;" title="查看同義與反義詞">💡 解析</button>
         </div>
 
@@ -148,21 +167,23 @@
         </div>
     </div>
 
-    <!-- ================== AI 提示詞彈出視窗 ================== -->
+    <!-- AI 提示詞彈出視窗 (加入 Youtube 欄位規則) -->
     <div id="promptModal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:3000; align-items:center; justify-content:center;">
-        <div style="background:white; width:90%; max-width:600px; border-radius:12px; padding:20px; text-align:left; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-            <h3 style="color:#27ae60; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">🤖 一鍵擴充 AI 提示詞</h3>
+        <div style="background:white; width:90%; max-width:650px; border-radius:12px; padding:20px; text-align:left; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="color:#27ae60; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">🤖 一鍵擴充 AI 提示詞 (包含 YouTube)</h3>
             <p style="font-size: 14px; color: #555;">請複製以下提示詞並發送給 AI，然後將產生的程式碼直接貼到 <code>words.js</code> 最下方即可。</p>
-            <textarea id="aiPromptText" style="width: 100%; height: 250px; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;" readonly>
+            <textarea id="aiPromptText" style="width: 100%; height: 350px; padding: 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 6px; resize: vertical;" readonly>
 請扮演一位專業的英語教師與網頁資料庫建置專家。
 我會提供給你一批新的單字清單。請幫我為每一個單字擴充「符合多益 900 分水準的商務英文例句」，並直接輸出成 JavaScript 的 `push` 陣列格式。
 
 【生成規則】
 1. 請輸出為 JSON 物件陣列，並將這個陣列包在 `allWordBatches.push(` 與 `);` 之中。
-2. 必須包含 `english`, `chinese`, `sentence`, `synonyms` (同義字), `antonyms` (反義字), `confused` (易混淆字) 這 6 個欄位。
-3. 將我提供的「英文單字」放入 `"english"` ；將「中文意思與頁碼」放入 `"chinese"` ；將你生成的例句放入 `"sentence"`。
-4. 如果遇到重複的單字沒關係，前端系統會自動覆蓋去重。
-5. 最重要：請只輸出在 Code block 中的純程式碼，不要任何解釋或廢話，方便我直接複製。
+2. 必須包含 `english`, `chinese`, `sentence`, `synonyms`, `antonyms`, `confused`, `youtube` 這 7 個欄位。
+3. 為了讓字庫更強大，請在 `synonyms` 與 `antonyms` 欄位中，盡可能提供豐富的詞彙 (盡量 5 到 10 個以上)，並在每個詞後方附上 (中文)。
+4. 在 `confused` 欄位中，請補充「易混淆字」以及「相關的實用片語」，一樣在後方附上 (中文)。
+5. 在 `youtube` 欄位中，請輸出字串："https://www.youtube.com/results?search_query=how+to+pronounce+" 加上該英文單字。
+6. 如果遇到重複的單字沒關係，前端系統會自動覆蓋去重。
+7. 最重要：請只輸出在 Code block 中的純程式碼，不要任何解釋或廢話。
 
 【預期輸出範例】
 allWordBatches.push([
@@ -170,9 +191,10 @@ allWordBatches.push([
     "english": "budget",
     "chinese": "預算 (n.) (P.3)",
     "sentence": "We must carefully manage the project budget to ensure profitability.",
-    "synonyms": "fund, allocation",
-    "antonyms": "debt",
-    "confused": "badge"
+    "synonyms": "fund (資金), allocation (分配), financial plan (財務計畫), allowance (津貼), capital (資本), resources (資源)",
+    "antonyms": "debt (債務), deficit (赤字), liability (負債), loss (損失), overdraft (透支)",
+    "confused": "badge (徽章) / on a budget (預算有限), go over budget (超出預算)",
+    "youtube": "https://www.youtube.com/results?search_query=how+to+pronounce+budget"
   }
 ]);
 
@@ -186,13 +208,15 @@ allWordBatches.push([
         </div>
     </div>
 
-    <!-- ================== 單字解析彈出視窗 ================== -->
+    <!-- 單字解析彈出視窗 -->
     <div id="infoModal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
-        <div style="background:white; width:90%; max-width:400px; border-radius:12px; padding:20px; text-align:left; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+        <div style="background:white; width:90%; max-width:500px; border-radius:12px; padding:20px; text-align:left; box-shadow: 0 4px 15px rgba(0,0,0,0.2); max-height: 80vh; overflow-y: auto;">
             <h3 id="infoTitle" style="color:#d35400; margin-top:0; border-bottom: 2px solid #eee; padding-bottom: 10px;">單字解析</h3>
-            <p style="font-size: 16px;"><strong>✅ 同義字：</strong> <span id="infoSynonyms" style="color: #2c3e50;">無</span></p>
-            <p style="font-size: 16px;"><strong>❌ 反義字：</strong> <span id="infoAntonyms" style="color: #2c3e50;">無</span></p>
-            <p style="font-size: 16px;"><strong>⚠️ 易混淆：</strong> <span id="infoConfused" style="color: #e74c3c;">無</span></p>
+            <p style="font-size: 16px; line-height: 1.6;"><strong>✅ 同義字：</strong><br> <span id="infoSynonyms" style="color: #2c3e50;">無</span></p>
+            <hr style="border: 0; border-top: 1px dashed #ddd;">
+            <p style="font-size: 16px; line-height: 1.6;"><strong>❌ 反義字：</strong><br> <span id="infoAntonyms" style="color: #2c3e50;">無</span></p>
+            <hr style="border: 0; border-top: 1px dashed #ddd;">
+            <p style="font-size: 16px; line-height: 1.6;"><strong>⚠️ 混淆 / 片語：</strong><br> <span id="infoConfused" style="color: #e74c3c;">無</span></p>
             <div style="text-align:right; margin-top:20px;">
                 <button onclick="closeWordInfo()" style="background-color:#636e72; padding: 8px 16px; font-size: 16px; color: white; border: none; border-radius: 6px; cursor: pointer;">關閉</button>
             </div>
