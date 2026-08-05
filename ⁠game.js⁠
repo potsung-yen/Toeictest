@@ -1,16 +1,25 @@
 let wordList = [];
 let uniqueDict = {};
 
-// 直接讀取變數 SpellingHeroData
-if (typeof SpellingHeroData !== 'undefined' && Array.isArray(SpellingHeroData)) {
-    SpellingHeroData.forEach(word => {
-        if (word && word.english) {
-            let key = word.english.toLowerCase().trim();
-            uniqueDict[key] = word; 
-        }
-    });
-    wordList = Object.values(uniqueDict);
+function loadWordDatabase() {
+    if (wordList.length > 0) return; // 已經載入過了就跳過
+    
+    // 支援新舊兩種格式，確保 100% 抓得到單字
+    let rawData = typeof SpellingHeroData !== 'undefined' ? SpellingHeroData : (typeof window.SpellingHeroWords !== 'undefined' ? window.SpellingHeroWords : []);
+    
+    if (Array.isArray(rawData)) {
+        rawData.forEach(word => {
+            if (word && word.english) {
+                let key = word.english.toLowerCase().trim();
+                uniqueDict[key] = word; 
+            }
+        });
+        wordList = Object.values(uniqueDict);
+    }
 }
+
+// 頁面一開始就執行載入
+loadWordDatabase();
 
 let currentPlayer = "";
 let currentWord = {};
@@ -18,6 +27,7 @@ let isBossMode = false;
 let bossWordList = [];
 
 function openYouTube(customWord) {
+    loadWordDatabase();
     let targetWord = customWord || (currentWord && currentWord.english);
     if (!targetWord) return;
     
@@ -30,6 +40,7 @@ function openYouTube(customWord) {
 }
 
 function searchWord() {
+    loadWordDatabase();
     const query = document.getElementById("searchInput").value.trim().toLowerCase();
     const resultArea = document.getElementById("searchResultArea");
     
@@ -83,6 +94,7 @@ function handleSearchEnter(event) {
 }
 
 function startGame() {
+    loadWordDatabase();
     if (wordList.length === 0) {
         alert("⚠️ 嚴重錯誤：系統抓不到任何單字！請確認 words.js 是否已成功上傳且格式正確。");
         return; 
@@ -108,6 +120,7 @@ function changeMode() {
 }
 
 function getCombinedWordList() {
+    loadWordDatabase();
     let customWords = JSON.parse(localStorage.getItem(`SpellingHero_CustomWords_${currentPlayer}`)) || [];
     let fullList = wordList.concat(customWords);
 
@@ -170,6 +183,7 @@ function getDetailedPOS(eng, chi) {
 }
 
 function nextQuestion() {
+    loadWordDatabase();
     const mode = document.querySelector('input[name="gameMode"]:checked').value;
     
     document.getElementById("nextBtn").style.display = "none";
@@ -223,6 +237,7 @@ function nextQuestion() {
 }
 
 function renderChoiceOptions() {
+    loadWordDatabase();
     const choiceArea = document.getElementById("choiceArea");
     choiceArea.innerHTML = "";
 
@@ -486,6 +501,7 @@ function handleFileUpload(event) {
 }
 
 function showWordInfo() {
+    loadWordDatabase();
     if (!currentWord || !currentWord.english) return;
     document.getElementById('infoTitle').innerText = `【 ${currentWord.english} 】 解析`;
     document.getElementById('infoSynonyms').innerText = currentWord.synonyms || "暫無資料";
@@ -513,6 +529,7 @@ function copyPrompt() {
 }
 
 function openWordSelector() {
+    loadWordDatabase();
     if (wordList.length === 0) {
         alert("⚠️ 錯誤：目前沒有單字可以挑選！請檢查單字庫是否載入成功。");
         return;
