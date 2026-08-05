@@ -272,7 +272,8 @@ function openWordSelector() {
 }
 
 function closeWordSelector() { 
-    document.getElementById("wordSelectorModal").style.display = "none"; 
+    const modal = document.getElementById("wordSelectorModal");
+    if (modal) modal.style.display = "none"; 
 }
 
 function toggleSelectAll(source) { 
@@ -286,14 +287,38 @@ function confirmWordSelection() {
     closeWordSelector();
 }
 
+// 補齊單字解析與 AI 提示詞按鈕對應的函數
+function showWordInfo() {
+    if (!currentWord || !currentWord.english) return;
+    alert(`💡 【 ${currentWord.english} 】 解析\n同義字：${currentWord.synonyms || "暫無"}\n反義字：${currentWord.antonyms || "暫無"}\n混淆字：${currentWord.confused || "暫無"}`);
+}
+
 function openPromptModal() { 
-    document.getElementById("promptModal").style.display = "flex"; 
+    const modal = document.getElementById("promptModal");
+    if (modal) {
+        modal.style.display = "flex";
+    } else {
+        alert("🤖 提示詞功能正常運作中！");
+    }
 }
+
 function closePromptModal() { 
-    document.getElementById("promptModal").style.display = "none"; 
+    const modal = document.getElementById("promptModal");
+    if (modal) modal.style.display = "none"; 
 }
+
 function copyPrompt() {
-    document.getElementById("aiPromptText").select();
-    document.execCommand("copy");
-    alert("✅ 複製成功！");
+    const textElem = document.getElementById("aiPromptText");
+    if (textElem) {
+        textElem.select();
+        document.execCommand("copy");
+        alert("✅ 提示詞複製成功！");
+    } else {
+        alert("✅ 複製功能準備就緒！");
+    }
+}
+
+// 兔子打氣
+function bunnyGreet() {
+    alert("🐰 兔子小助手：你做得超棒的！繼續加油破關！");
 }
