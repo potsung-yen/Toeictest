@@ -1,4 +1,6 @@
-window.SpellingHeroWords = [
+window.SpellingHeroWords = [];
+
+window.SpellingHeroWords.push(
   {
     "english": "absurd",
     "chinese": "荒謬的 (adj.) (P.1)",
@@ -269,4 +271,4 @@ window.SpellingHeroWords = [
     "confused": "airline (航空公司) / commercial airliner (商用客機)",
     "youtube": "https://www.youtube.com/results?search_query=how+to+pronounce+airliner"
   }
-];
+);
