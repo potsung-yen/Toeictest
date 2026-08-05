@@ -97,8 +97,10 @@ function handleSearchEnter(event) {
 
 function startGame() {
     loadWordDatabase();
+    
+    // 🔴 偵錯警報：如果點下去發現 wordList 還是空的，立刻跳窗告訴我們！
     if (wordList.length === 0) {
-        alert("⚠️ 嚴重錯誤：系統抓不到任何單字！請確認 words.js 是否已成功上傳且格式正確。");
+        alert("🚨 抓到兇手了！words.js 裡的單字完全沒有被讀進來！請檢查 words.js 第一行是不是 var SpellingHeroData = [");
         return; 
     }
 
@@ -113,6 +115,7 @@ function startGame() {
     
     bunnySay(`加油啦 ${currentPlayer}！我們一起破關！`);
     nextQuestion();
+}
 }
 
 function changeMode() {
