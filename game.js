@@ -24,10 +24,9 @@ let bossWordList = [];
 // 📺 YouTube 發音連結引擎
 // ==========================================
 function openYouTube(customWord) {
-    // 優先使用傳入的單字，沒有則使用當前遊戲正在考的單字
-    let targetWord = customWord || currentWord.english;
+    let targetWord = customWord || (currentWord && currentWord.english);
+    if (!targetWord) return;
     
-    // 如果資料庫(words.js)裡有存 youtube 網址就用它，沒有的話系統幫你自動合成！
     let targetData = wordList.find(w => w.english.toLowerCase() === targetWord.toLowerCase());
     let url = (targetData && targetData.youtube) 
         ? targetData.youtube 
@@ -43,6 +42,12 @@ function searchWord() {
     const query = document.getElementById("searchInput").value.trim().toLowerCase();
     const resultArea = document.getElementById("searchResultArea");
     
+    // 如果單字庫是空的，提出警告
+    if (wordList.length === 0) {
+        alert("系統讀取不到單字庫！請稍後再試或重新整理網頁。");
+        return;
+    }
+
     if (!query) {
         resultArea.style.display = "none";
         return;
@@ -68,7 +73,7 @@ function searchWord() {
             <h3 style="margin: 0 0 8px 0; color: #8e44ad; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                 ${w.english} 
                 <span style="font-size: 16px; color: #333;">${tag} ${w.chinese}</span>
-                <button onclick="openYouTube('${w.english}')" style="background-color: #e74c3c; padding: 4px 10px; font-size: 14px; border-radius: 4px;">📺 聽發音</button>
+                <button onclick="openYouTube('${w.english}')" style="background-color: #e74c3c; padding: 4px 10px; font-size: 14px; border-radius: 4px; color: white; border: none; cursor: pointer;">📺 聽發音</button>
             </h3>
             <p style="color: #555;"><em>${w.sentence || "無例句"}</em></p>
             <hr style="border: 0; border-top: 1px dashed #ccc; margin: 8px 0;">
@@ -89,6 +94,12 @@ function handleSearchEnter(event) {
 // ==========================================
 
 function startGame() {
+    // 🔥 防呆與除錯防線：確保單字真的有讀到才讓遊戲開始
+    if (wordList.length === 0) {
+        alert("⚠️ 錯誤：系統抓不到任何單字！\n\n這通常是因為：\n1. GitHub Pages 還在跑更新快取 (請等 2~3 分鐘後重新整理)\n2. words.js 檔案有語法錯誤 (例如漏掉逗號或括號)\n\n請不要硬玩，會當機喔！");
+        return; 
+    }
+
     currentPlayer = document.getElementById("playerName").value.trim() || "冒險王";
     document.getElementById("gameArea").style.display = "block";
     document.getElementById("uploadArea").style.display = "block"; 
@@ -247,6 +258,7 @@ function renderChoiceOptions() {
 }
 
 function speakWord() {
+    if (!currentWord || !currentWord.english) return;
     let textToSpeak = currentWord.english.replace(/^(a |an |the |to )/i, '').replace(/\([^)]*\)/g, '').trim();
     if (!textToSpeak) return;
 
@@ -486,6 +498,7 @@ function handleFileUpload(event) {
 }
 
 function showWordInfo() {
+    if (!currentWord || !currentWord.english) return;
     document.getElementById('infoTitle').innerText = `【 ${currentWord.english} 】 解析`;
     document.getElementById('infoSynonyms').innerText = currentWord.synonyms || "暫無資料";
     document.getElementById('infoAntonyms').innerText = currentWord.antonyms || "暫無資料";
@@ -512,6 +525,11 @@ function copyPrompt() {
 }
 
 function openWordSelector() {
+    if (wordList.length === 0) {
+        alert("⚠️ 錯誤：目前沒有單字可以挑選！請檢查單字庫是否載入成功。");
+        return;
+    }
+
     const modal = document.getElementById("wordSelectorModal");
     const container = document.getElementById("wordListContainer");
     container.innerHTML = ""; 
